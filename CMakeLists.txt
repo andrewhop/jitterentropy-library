@@ -48,3 +48,5 @@ endif()
 target_include_directories(${PROJECT_NAME} PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>)
+
+add_subdirectory(tests/raw-entropy/recording_userspace)
