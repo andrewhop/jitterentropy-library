@@ -46,7 +46,7 @@ OBJS := $(C_OBJS)
 analyze_srcs = $(filter %.c, $(sort $(C_SRCS)))
 analyze_plists = $(analyze_srcs:%.c=%.plist)
 
-INCLUDE_DIRS := . $(SRCDIR)
+INCLUDE_DIRS := . $(SRCDIR) $(INCDIR)
 LIBRARY_DIRS :=
 LIBRARIES := rt
 
