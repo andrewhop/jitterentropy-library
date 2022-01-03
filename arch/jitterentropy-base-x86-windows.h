@@ -42,6 +42,10 @@
 #ifndef _JITTERENTROPY_BASE_X86_H
 #define _JITTERENTROPY_BASE_X86_H
 
+#if defined(_MSC_VER)
+typedef __int64 ssize_t;
+#endif
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
