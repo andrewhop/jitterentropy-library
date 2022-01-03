@@ -359,7 +359,6 @@ struct rand_data
 # define JENT_PRIVATE_STATIC static
 #else /* JENT_PRIVATE_COMPILE */
 #if defined(_MSC_VER)
-typedef __int64 ssize_t;
 #define JENT_PRIVATE_STATIC __declspec(dllexport)
 #else
 #define JENT_PRIVATE_STATIC __attribute__((visibility("hidden")))
