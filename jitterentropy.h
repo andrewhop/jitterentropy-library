@@ -94,8 +94,6 @@
  * Jitter RNG State Definition Section
  ***************************************************************************/
 
-#include "jitterentropy-base-user.h"
-
 #if defined(_MSC_VER)
 #include "arch/jitterentropy-base-x86-windows.h"
 #else
