@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 2.8.12)
 
 project(jitterentropy C)
 
-option(ENABLE_STACK_PROTECTOR "Compile Jitter with stack protector enabled" ON)
-option(ENABLE_INTERNAL_TIMER "Compile Jitter with the internal thread based timer" ON)
-option(COMPILE_WITH_OPENSSL "Compile Jitter and use OpenSSL or a fork such as AWS-LC" ON)
+option(STACK_PROTECTOR "Compile Jitter with stack protector enabled" ON)
+option(INTERNAL_TIMER "Compile Jitter with the internal thread based timer" ON)
+option(USE_OPENSSL "Compile Jitter and use OpenSSL or a fork such as AWS-LC" ON)
 
 # CMake sets the variable MSVC to true automatically, replicate that for other compilers
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
@@ -17,11 +17,11 @@ file(GLOB JITTER_SRC "src/*.c")
 file(GLOB JITTER_BASE_HEADERS "src/*.h")
 file(GLOB JITTER_ARCH_HEADERS "arch/*.h")
 
-if(ENABLE_INTERNAL_TIMER)
+if(INTERNAL_TIMER)
     set(JITTER_C_FLAGS "${JITTER_C_FLAGS} -DJENT_CONF_ENABLE_INTERNAL_TIMER")
 endif()
 
-if(COMPILE_WITH_OPENSSL)
+if(USE_OPENSSL)
     set(JITTER_C_FLAGS "${JITTER_C_FLAGS} -DOPENSSL")
 endif()
 
@@ -36,7 +36,7 @@ else()
 endif()
 
 
-if(ENABLE_STACK_PROTECTOR)
+if(STACK_PROTECTOR)
     if(GCC)
         if(CMAKE_C_COMPILER_VERSION VERSION_GREATER "4.9.0")
             set(JITTER_C_FLAGS "${JITTER_C_FLAGS}  -fstack-protector-strong")
