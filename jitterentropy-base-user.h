@@ -55,11 +55,6 @@
 #undef OPENSSL
 #endif
 
-#ifndef AWSLC
-#undef AWSLC
-#endif
-
-
 #include <limits.h>
 #include <time.h>
 #include <stdint.h>

@@ -4,7 +4,7 @@ project(jitterentropy C)
 
 option(STACK_PROTECTOR "Compile Jitter with stack protector enabled" ON)
 option(INTERNAL_TIMER "Compile Jitter with the internal thread based timer" ON)
-option(USE_OPENSSL "Compile Jitter and use OpenSSL or a fork such as AWS-LC" ON)
+option(USE_AWSLC "Compile Jitter and use AWS-LC" OFF)
 
 # CMake sets the variable MSVC to true automatically, replicate that for other compilers
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
@@ -21,8 +21,8 @@ if(INTERNAL_TIMER)
     set(JITTER_C_FLAGS "${JITTER_C_FLAGS} -DJENT_CONF_ENABLE_INTERNAL_TIMER")
 endif()
 
-if(USE_OPENSSL)
-    set(JITTER_C_FLAGS "${JITTER_C_FLAGS} -DOPENSSL")
+if(USE_AWSLC)
+    set(JITTER_C_FLAGS "${JITTER_C_FLAGS} -DAWSLC")
 endif()
 
 if(MSVC)
@@ -52,7 +52,7 @@ set(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS}  ${JITTER_LINKER_FLAGS
 set(CMAKE_C_FLAGS ${JITTER_C_FLAGS})
 
 add_library(${PROJECT_NAME} ${JITTER_SRC})
-if(COMPILE_WITH_OPENSSL)
+if(USE_AWSLC)
     find_package(OpenSSL REQUIRED)
     target_link_libraries(${PROJECT_NAME} PUBLIC OpenSSL::Crypto)
     target_include_directories(${PROJECT_NAME} PUBLIC ${OPENSSL_INCLUDE_DIR})

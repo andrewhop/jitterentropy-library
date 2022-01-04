@@ -42,14 +42,6 @@
 #ifndef _JITTERENTROPY_BASE_X86_H
 #define _JITTERENTROPY_BASE_X86_H
 
-//#ifndef AWSLC
-#define AWSLC
-//#endif
-
-#ifdef AWSLC
-#include <openssl/crypto.h>
-#endif
-
 #if defined(_MSC_VER)
 typedef __int64 ssize_t;
 #include <windows.h>
@@ -59,6 +51,10 @@ typedef __int64 ssize_t;
 #include <stdlib.h>
 #include <string.h>
 #include <intrin.h>
+
+#ifdef AWSLC
+#include <openssl/crypto.h>
+#endif
 
 typedef uint64_t __u64;
 
