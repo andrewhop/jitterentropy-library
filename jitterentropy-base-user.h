@@ -55,6 +55,11 @@
 #undef OPENSSL
 #endif
 
+#ifndef AWSLC
+#undef AWSLC
+#endif
+
+
 #include <limits.h>
 #include <time.h>
 #include <stdint.h>
@@ -84,6 +89,10 @@
 #ifdef OPENSSL_FIPS
 #include <openssl/fips.h>
 #endif
+#endif
+
+#ifdef AWSLC
+#include <openssl/crypto.h>
 #endif
 
 #ifdef __MACH__
@@ -154,7 +163,7 @@ static inline void *jent_zalloc(size_t len)
 	 * decision for less memory protection. */
 #define CONFIG_CRYPTO_CPU_JITTERENTROPY_SECURE_MEMORY
 	tmp = gcry_xmalloc_secure(len);
-#elif defined(OPENSSL)
+#elif defined(OPENSSL) || defined(AWSLC)
 	/* Does this allocation implies secure memory use? */
 	tmp = OPENSSL_malloc(len);
 #else
@@ -162,8 +171,11 @@ static inline void *jent_zalloc(size_t len)
 	 * we do not set CONFIG_CRYPTO_CPU_JITTERENTROPY_SECURE_MEMORY */
 	tmp = malloc(len);
 #endif /* LIBGCRYPT */
+
+#if !defined(AWSLC)
 	if(NULL != tmp)
 		memset(tmp, 0, len);
+#endif
 	return tmp;
 }
 
@@ -172,6 +184,9 @@ static inline void jent_zfree(void *ptr, unsigned int len)
 #ifdef LIBGCRYPT
 	memset(ptr, 0, len);
 	gcry_free(ptr);
+#elif defined(AWSLC)
+	(void) len;
+    OPENSSL_free(ptr);
 #elif defined(OPENSSL)
 	OPENSSL_cleanse(ptr, len);
 	OPENSSL_free(ptr);
@@ -185,6 +200,8 @@ static inline int jent_fips_enabled(void)
 {
 #ifdef LIBGCRYPT
 	return fips_mode();
+#elif defined(AWSLC)
+    return FIPS_mode();
 #elif defined(OPENSSL)
 #ifdef OPENSSL_FIPS
 	return FIPS_mode();
@@ -209,8 +226,12 @@ static inline int jent_fips_enabled(void)
 
 static inline void jent_memset_secure(void *s, size_t n)
 {
+#if defined(AWSLC)
+    OPENSSL_cleanse(s, n);
+#else
 	memset(s, 0, n);
 	__asm__ __volatile__("" : : "r" (s) : "memory");
+#endif
 }
 
 static inline long jent_ncpu(void)

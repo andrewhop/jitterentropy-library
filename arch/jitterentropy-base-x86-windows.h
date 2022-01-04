@@ -42,8 +42,17 @@
 #ifndef _JITTERENTROPY_BASE_X86_H
 #define _JITTERENTROPY_BASE_X86_H
 
+//#ifndef AWSLC
+#define AWSLC
+//#endif
+
+#ifdef AWSLC
+#include <openssl/crypto.h>
+#endif
+
 #if defined(_MSC_VER)
 typedef __int64 ssize_t;
+#include <windows.h>
 #endif
 
 #include <stdint.h>
@@ -63,21 +72,43 @@ static inline void *jent_zalloc(size_t len)
 	void *tmp = NULL;
 	/* we have no secure memory allocation! Hence
 	 * we do not sed CRYPTO_CPU_JITTERENTROPY_SECURE_MEMORY */
+#if defined(AWSLC)
+    tmp = OPENSSL_malloc(len);
+#else
 	tmp = malloc(len);
 	if(NULL != tmp)
 		memset(tmp, 0, len);
+#endif
 	return tmp;
 }
 
 static inline void jent_zfree(void *ptr, unsigned int len)
 {
-	memset(ptr, 0, len);
+#if defined(AWSLC)
+    (void) len;
+    OPENSSL_free(ptr);
+#else
+    memset(ptr, 0, len);
 	free(ptr);
+#endif
 }
 
 static inline int jent_fips_enabled(void)
 {
-        return 0;
+#if defined(AWSlC)
+    return FIPS_mode();
+#else
+    return 0;
+#endif
+}
+
+static inline void jent_memset_secure(void *s, size_t n)
+{
+#if defined(AWSLC)
+    OPENSSL_cleanse(s, n);
+#else
+    SecureZeroMemory(s, n);
+#endif
 }
 
 static inline long jent_ncpu(void)
