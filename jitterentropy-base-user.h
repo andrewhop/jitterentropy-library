@@ -44,16 +44,10 @@
 
 /*
  * Set the following defines as needed for your environment
+ * Compilation for AWS-LC     #define AWSLC
+ * Compilation for libgcrypt  #define LIBGCRYPT
+ * Compilation for OpenSSL    #define OPENSSL
  */
-/* Compilation for libgcrypt */
-#ifndef LIBGCRYPT
-#undef LIBGCRYPT
-#endif
-
-/* Compilation for OpenSSL */
-#ifndef OPENSSL
-#undef OPENSSL
-#endif
 
 #include <limits.h>
 #include <time.h>
@@ -86,7 +80,7 @@
 #endif
 #endif
 
-#ifdef AWSLC
+#if defined(AWSLC)
 #include <openssl/crypto.h>
 #endif
 
@@ -168,6 +162,7 @@ static inline void *jent_zalloc(size_t len)
 #endif /* LIBGCRYPT */
 
 #if !defined(AWSLC)
+    /* AWS-LC already sets all memory to zero in OPENSSL_malloc before returning it */
 	if(NULL != tmp)
 		memset(tmp, 0, len);
 #endif
@@ -180,8 +175,9 @@ static inline void jent_zfree(void *ptr, unsigned int len)
 	memset(ptr, 0, len);
 	gcry_free(ptr);
 #elif defined(AWSLC)
+    /* AWS-LC stores the length of allocated memory internally and automatically wipes it in OPENSSL_free */
 	(void) len;
-    OPENSSL_free(ptr);
+	OPENSSL_free(ptr);
 #elif defined(OPENSSL)
 	OPENSSL_cleanse(ptr, len);
 	OPENSSL_free(ptr);
@@ -196,7 +192,7 @@ static inline int jent_fips_enabled(void)
 #ifdef LIBGCRYPT
 	return fips_mode();
 #elif defined(AWSLC)
-    return FIPS_mode();
+	return FIPS_mode();
 #elif defined(OPENSSL)
 #ifdef OPENSSL_FIPS
 	return FIPS_mode();
@@ -222,7 +218,7 @@ static inline int jent_fips_enabled(void)
 static inline void jent_memset_secure(void *s, size_t n)
 {
 #if defined(AWSLC)
-    OPENSSL_cleanse(s, n);
+	OPENSSL_cleanse(s, n);
 #else
 	memset(s, 0, n);
 	__asm__ __volatile__("" : : "r" (s) : "memory");

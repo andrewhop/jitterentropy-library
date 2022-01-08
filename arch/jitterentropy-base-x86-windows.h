@@ -52,7 +52,7 @@ typedef __int64 ssize_t;
 #include <string.h>
 #include <intrin.h>
 
-#ifdef AWSLC
+#if defined(AWSLC)
 #include <openssl/crypto.h>
 #endif
 
