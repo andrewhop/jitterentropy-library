@@ -160,12 +160,8 @@ static inline void *jent_zalloc(size_t len)
 	 * we do not set CONFIG_CRYPTO_CPU_JITTERENTROPY_SECURE_MEMORY */
 	tmp = malloc(len);
 #endif /* LIBGCRYPT */
-
-#if !defined(AWSLC)
-    /* AWS-LC already sets all memory to zero in OPENSSL_malloc before returning it */
 	if(NULL != tmp)
 		memset(tmp, 0, len);
-#endif
 	return tmp;
 }
 

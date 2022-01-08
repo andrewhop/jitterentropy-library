@@ -72,9 +72,9 @@ static inline void *jent_zalloc(size_t len)
     tmp = OPENSSL_malloc(len);
 #else
 	tmp = malloc(len);
+#endif
 	if(NULL != tmp)
 		memset(tmp, 0, len);
-#endif
 	return tmp;
 }
 
