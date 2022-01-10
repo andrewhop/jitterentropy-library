@@ -91,7 +91,7 @@ static inline void jent_zfree(void *ptr, unsigned int len)
 
 static inline int jent_fips_enabled(void)
 {
-#if defined(AWSlC)
+#if defined(AWSLC)
     return FIPS_mode();
 #else
     return 0;
