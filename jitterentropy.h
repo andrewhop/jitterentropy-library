@@ -361,7 +361,7 @@ struct rand_data
 #if defined(_MSC_VER)
 #define JENT_PRIVATE_STATIC __declspec(dllexport)
 #else
-#define JENT_PRIVATE_STATIC __attribute__((visibility("hidden")))
+#define JENT_PRIVATE_STATIC __attribute__((visibility("default")))
 #endif
 #endif
 
