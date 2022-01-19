@@ -69,7 +69,7 @@ static inline void *jent_zalloc(size_t len)
 	/* we have no secure memory allocation! Hence
 	 * we do not sed CRYPTO_CPU_JITTERENTROPY_SECURE_MEMORY */
 #if defined(AWSLC)
-    tmp = OPENSSL_malloc(len);
+	tmp = OPENSSL_malloc(len);
 #else
 	tmp = malloc(len);
 #endif
@@ -81,10 +81,10 @@ static inline void *jent_zalloc(size_t len)
 static inline void jent_zfree(void *ptr, unsigned int len)
 {
 #if defined(AWSLC)
-    (void) len;
-    OPENSSL_free(ptr);
+	(void) len;
+	OPENSSL_free(ptr);
 #else
-    memset(ptr, 0, len);
+	memset(ptr, 0, len);
 	free(ptr);
 #endif
 }
@@ -92,18 +92,18 @@ static inline void jent_zfree(void *ptr, unsigned int len)
 static inline int jent_fips_enabled(void)
 {
 #if defined(AWSLC)
-    return FIPS_mode();
+	return FIPS_mode();
 #else
-    return 0;
+	return 0;
 #endif
 }
 
 static inline void jent_memset_secure(void *s, size_t n)
 {
 #if defined(AWSLC)
-    OPENSSL_cleanse(s, n);
+	OPENSSL_cleanse(s, n);
 #else
-    SecureZeroMemory(s, n);
+	SecureZeroMemory(s, n);
 #endif
 }
 
