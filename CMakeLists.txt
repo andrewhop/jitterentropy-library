@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.15.7)
 
 project(jitterentropy C)
 set(CMAKE_C_STANDARD 99)
@@ -7,6 +7,14 @@ option(STACK_PROTECTOR "Compile Jitter with stack protector enabled" ON)
 option(INTERNAL_TIMER "Compile Jitter with the internal thread based timer" ON)
 option(EXTERNAL_CRYPTO "Compile Jitter and use an external libcrypto, valid options are [AWSLC, OPENSSL, LIBGCRYPT]")
 
+set(EXTERNAL_CRYPTO_SUPPORTED AWSLC OPENSSL LIBGCRYPT)
+if (NOT EXTERNAL_CRYPTO)
+    message(STATUS "Using internal functions for everything - EXTERNAL_CRYPTO not set")
+elseif( NOT (EXTERNAL_CRYPTO IN_LIST EXTERNAL_CRYPTO_SUPPORTED))
+    message(FATAL_ERROR "Unknown EXTERNAL_CRYPTO option ${EXTERNAL_CRYPTO}")
+endif()
+
+
 # CMake defines the variable MSVC to true automatically when building with MSVC, replicate that for other compilers
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     set(CLANG 1)
@@ -14,43 +22,78 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU")
     set(GCC 1)
 endif()
 
-if(INTERNAL_TIMER)
-    list(APPEND JITTER_C_FLAGS -DJENT_CONF_ENABLE_INTERNAL_TIMER)
-endif()
+add_compile_options(
+    ### C Based Language and ID.
+    $<$<COMPILE_LANG_AND_ID:C,GNU>:-fdiagnostics-color=always>
+    $<$<COMPILE_LANG_AND_ID:C,Clang>:-fcolor-diagnostics>
 
-if(EXTERNAL_CRYPTO)
-    list(APPEND JITTER_C_FLAGS  -D${EXTERNAL_CRYPTO})
-endif()
+    $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Wall>
+    $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Wextra>
+    $<$<COMPILE_LANG_AND_ID:C,Clang>:-Wpedantic> # Note not used in GNU to allow C99 designated initializers.
+    $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Werror>
+    $<$<COMPILE_LANG_AND_ID:C,Clang>:-Weverything>
 
-if(MSVC)
-    list(APPEND JITTER_C_FLAGS  /Od /W4 /DYNAMICBASE)
-    set(JITTER_LINK_FLAGS ${JITTER_LINK_FLAGS})
-else()
-    list(APPEND JITTER_C_FLAGS  -fwrapv --param ssp-buffer-size=4 -fvisibility=hidden -fPIE -Wcast-align
-    -Wmissing-field-initializers -Wshadow -Wswitch-enum -Wextra -Wall -pedantic -fPIC -O0 -fwrapv -Wconversion)
-    list(APPEND JITTER_LINKER_FLAGS -Wl,-z,relro,-z,now)
-endif()
+    $<$<COMPILE_LANG_AND_ID:C,Clang>:-Wno-c++98-compat>
+    $<$<COMPILE_LANG_AND_ID:C,Clang>:-Wno-c++98-compat-pedantic>
 
-if(STACK_PROTECTOR)
-    if(GCC)
-        if(CMAKE_C_COMPILER_VERSION VERSION_GREATER "4.9.0")
-            list(APPEND JITTER_C_FLAGS -fstack-protector-strong)
-        else()
-            list(APPEND JITTER_C_FLAGS -fstack-protector-all)
-        endif()
-    elseif(CLANG)
-        list(APPEND JITTER_C_FLAGS -fstack-protector-strong)
-    endif()
-endif()
+    # Allow clang and gnu pramgmas.
+    $<$<COMPILE_LANG_AND_ID:C,GNU>:-Wno-unknown-pragmas>
 
-file(GLOB JITTER_SRC "src/*.c")
-add_library(${PROJECT_NAME} ${JITTER_SRC})
-target_compile_options(${PROJECT_NAME} PRIVATE ${JITTER_C_FLAGS})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${JITTER_LINKER_FLAGS})
+    # Documentation types
+    $<$<COMPILE_LANG_AND_ID:C,Clang>:-fcomment-block-commands=retval> # Doesn't recongize doxygen retval
+    $<$<COMPILE_LANG_AND_ID:C,Clang>:-fcomment-block-commands=copydetails> # Doesn't recongize doxygen copydetails
+)
 
-target_include_directories(${PROJECT_NAME} PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>)
+
+add_library(${PROJECT_NAME} )
+target_sources(${PROJECT_NAME}
+  PRIVATE
+    src/jitterentropy-base.c
+    src/jitterentropy-base.h
+    src/jitterentropy-gcd.c
+    src/jitterentropy-gcd.h
+    src/jitterentropy-health.c
+    src/jitterentropy-health.h
+    src/jitterentropy-noise.c
+    src/jitterentropy-noise.h
+    src/jitterentropy-sha3.c
+    src/jitterentropy-sha3.h
+    src/jitterentropy-timer.c
+    src/jitterentropy-timer.h
+)
+
+target_compile_definitions(${PROJECT_NAME}
+  PRIVATE
+    $<$<BOOL:INTERNAL_TIMER>:JENT_CONF_ENABLE_INTERNAL_TIMER>
+    $<$<BOOL:EXTERNAL_CRYPTO>:${EXTERNAL_CRYPTO}>
+)
+
+target_compile_options(${PROJECT_NAME}
+  PRIVATE
+    $<$<COMPILE_LANG_AND_ID:C,MSVC>:/Od /W4 /DYNAMICBASE>
+    # Note -Wcast-align -Wmissing-field-initializers -Wshadow -Wswitch-enum -Wextra -Wall -pedantic are all enabled above.
+    $<$<COMPILE_LANG_AND_ID:C,GNU,Clang>:-fwrapv --param ssp-buffer-size=4 -fvisibility=hidden -fPIE -fPIC -O0 -fwrapv -Wconversion>
+
+    $<$<AND:$<BOOL:STACK_PROTECTOR>,$<COMPILE_LANG_AND_ID:C,GNU>,$<VERSION_LESS_EQUAL:$<C_COMPILER_VERSION>,"4.9.0">>:-fstack-protector-all>
+    $<$<AND:$<BOOL:STACK_PROTECTOR>,$<COMPILE_LANG_AND_ID:C,GNU>,$<VERSION_GREATER:$<C_COMPILER_VERSION>,"4.9.0">>:-fstack-protector-strong>
+    $<$<AND:$<BOOL:STACK_PROTECTOR>,$<COMPILE_LANG_AND_ID:C,Clang>>:-fstack-protector-strong>
+
+    # These are expected based on coding style.
+    $<$<COMPILE_LANG_AND_ID:C,Clang>:-Wno-language-extension-token> # for asm
+    $<$<COMPILE_LANG_AND_ID:C,Clang>:-Wno-padded> # padded struct `rand_data` in jitterentropy.h - reorder values uint64_t on top then smaller sized variable after.
+    $<$<COMPILE_LANG_AND_ID:C,Clang>:-Wno-reserved-macro-identifier> # use of `_` before name of defined header guards
+)
+
+target_link_options(${PROJECT_NAME}
+  PRIVATE
+    $<$<COMPILE_LANG_AND_ID:C,GNU,Clang>:-Wl,-z,relro,-z,now>
+)
+
+target_include_directories(${PROJECT_NAME}
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+)
 
 if(EXTERNAL_CRYPTO STREQUAL "AWSLC")
     # This header is unique from OpenSSL
@@ -62,10 +105,6 @@ elseif(EXTERNAL_CRYPTO STREQUAL "OPENSSL")
 elseif(EXTERNAL_CRYPTO STREQUAL "LIBGCRYPT")
     set(EXTERNAL_CRYPTO_HEADER "g10lib.h")
     set(EXTERNAL_CRYPTO_LIBRARY_NAME libgcrypt)
-elseif(NOT EXTERNAL_CRYPTO)
-    message(STATUS "Using internal functions for everything")
-else()
-    message(FATAL_ERROR "Unknown EXTERNAL_CRYPTO option ${EXTERNAL_CRYPTO}")
 endif()
 
 if(EXTERNAL_CRYPTO)
@@ -94,8 +133,14 @@ if(EXTERNAL_CRYPTO)
 endif()
 
 if(INTERNAL_TIMER)
-    target_link_libraries(${PROJECT_NAME} PUBLIC pthread)
+  set(THREADS_PREFER_PTHREAD_FLAG ON)
+  find_package(Threads)
 endif()
+
+target_link_libraries(${PROJECT_NAME}
+  PUBLIC
+    $<$<BOOL:${INTERNAL_TIMER}>:Threads::Threads>
+)
 
 add_subdirectory(tests/gcd)
 add_subdirectory(tests/raw-entropy/recording_userspace)

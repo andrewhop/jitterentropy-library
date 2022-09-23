@@ -151,10 +151,10 @@ static inline unsigned int jent_update_memsize(unsigned int flags)
  * This function truncates the last 64 bit entropy value output to the exact
  * size specified by the caller.
  *
- * @ec [in] Reference to entropy collector
- * @data [out] pointer to buffer for storing random data -- buffer must
+ * @param[in] ec Reference to entropy collector
+ * @param[out] data pointer to buffer for storing random data -- buffer must
  *	       already exist
- * @len [in] size of the buffer, specifying also the requested number of random
+ * @param[in] len size of the buffer, specifying also the requested number of random
  *	     in bytes
  *
  * @return number of bytes returned when request is fulfilled or an error
@@ -239,7 +239,7 @@ err:
 	return ret ? ret : (ssize_t)orig_len;
 }
 
-static struct rand_data *_jent_entropy_collector_alloc(unsigned int osr,
+static struct rand_data *local_jent_entropy_collector_alloc(unsigned int osr,
 						       unsigned int flags);
 
 /**
@@ -256,11 +256,11 @@ static struct rand_data *_jent_entropy_collector_alloc(unsigned int osr,
  * getting too large. If an error is returned by this function, the Jitter RNG
  * is not safe to be used on the current system.
  *
- * @ec [in] Reference to entropy collector - this is a double pointer as
+ * @param[in] ec Reference to entropy collector - this is a double pointer as
  *	    The entropy collector may be freed and reallocated.
- * @data [out] pointer to buffer for storing random data -- buffer must
+ * @param[out] data pointer to buffer for storing random data -- buffer must
  *	       already exist
- * @len [in] size of the buffer, specifying also the requested number of random
+ * @param[in] len size of the buffer, specifying also the requested number of random
  *	     in bytes
  *
  * @return see jent_read_entropy()
@@ -313,7 +313,7 @@ ssize_t jent_read_entropy_safe(struct rand_data **ec, char *data, size_t len)
 			if (jent_entropy_init_ex(osr, flags))
 				return -1;
 
-			*ec = _jent_entropy_collector_alloc(osr, flags);
+			*ec = local_jent_entropy_collector_alloc(osr, flags);
 			if (!*ec)
 				return -1;
 
@@ -489,7 +489,7 @@ err:
 	return NULL;
 }
 
-static struct rand_data *_jent_entropy_collector_alloc(unsigned int osr,
+static struct rand_data *local_jent_entropy_collector_alloc(unsigned int osr,
 						       unsigned int flags)
 {
 	struct rand_data *ec = jent_entropy_collector_alloc_internal(osr,
@@ -513,7 +513,7 @@ JENT_PRIVATE_STATIC
 struct rand_data *jent_entropy_collector_alloc(unsigned int osr,
 					       unsigned int flags)
 {
-	struct rand_data *ec = _jent_entropy_collector_alloc(osr, flags);
+	struct rand_data *ec = local_jent_entropy_collector_alloc(osr, flags);
 
 	/* Remember that the caller provided a maximum size flag */
 	if (ec)

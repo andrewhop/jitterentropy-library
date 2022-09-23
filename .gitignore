@@ -2,3 +2,5 @@ SP800-90B_EntropyAssessment
 .kdev4
 *.kdev4
 
+#CMake default build director
+build

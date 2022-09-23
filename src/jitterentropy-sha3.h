@@ -31,6 +31,7 @@ extern "C"
 #define SHA3_256_SIZE_BLOCK	SHA3_SIZE_BLOCK(SHA3_256_SIZE_DIGEST_BITS)
 #define SHA3_MAX_SIZE_BLOCK	SHA3_256_SIZE_BLOCK
 
+#pragma pack(push, 4)
 struct sha_ctx {
 	uint64_t state[25];
 	size_t msg_len;
@@ -39,6 +40,7 @@ struct sha_ctx {
 	unsigned int digestsize;
 	uint8_t partial[SHA3_MAX_SIZE_BLOCK];
 };
+#pragma pack(pop)
 
 #define SHA_MAX_CTX_SIZE	(sizeof(struct sha_ctx))
 #define HASH_CTX_ON_STACK(name)						       \
